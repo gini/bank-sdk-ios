@@ -204,7 +204,7 @@ You can also provide your own networking by implementing the `GiniCaptureNetwork
 
 ```swift
 let viewController = GiniBank.viewController(importedDocuments: visionDocuments,
-                                            configuration: configuration,
+                                            configuration: giniBankConfiguration,
                                             resultsDelegate: resultsDelegate,
                                             documentMetadata: documentMetadata,
                                             trackingDelegate: trackingDelegate,
@@ -213,6 +213,9 @@ let viewController = GiniBank.viewController(importedDocuments: visionDocuments,
 
 present(viewController, animated: true, completion: nil)
 ```
+
+We provide an example implementation [here](https://github.com/gini/gini-mobile-ios/blob/main/BankSDK/GiniBankSDKExample/GiniBankSDKExample/Screen%20API/ScreenAPICoordinator.swift#L162).
+
 You may also use the [Gini Bank API Library](https://github.com/gini/bank-api-library-ios) or implement communication with the Gini Bank API yourself.
 
 ## Component API
@@ -240,6 +243,11 @@ The components that can be found in the library are:
 ## Sending Feedback
 
 Your app should send feedback for the extractions the Gini Bank API delivered. Feedback should be sent only for the extractions the user has seen and accepted (or corrected).
+
+We provide a sample test case [here](https://github.com/gini/gini-mobile-ios/blob/main/BankSDK/GiniBankSDKExample/Tests/ExtractionFeedbackIntegrationTest.swift) to verify that extraction feedback sending works. 
+You may use it along with the example pdf and json files as a starting point to write your own test case.
+
+The sample test case is based on the Bank API documentation's [recommended steps](https://pay-api.gini.net/documentation/#test-example) for testing extraction feedback sending.
 
 For additional information about feedback see the [Gini Bank API documentation](https://pay-api.gini.net/documentation/#send-feedback-and-get-even-better-extractions-next-time).
 
