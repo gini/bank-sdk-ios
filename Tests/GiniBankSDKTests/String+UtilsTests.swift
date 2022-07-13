@@ -61,4 +61,27 @@ final class StringUtilsTests: XCTestCase {
         }
         XCTAssertEqual(giniBankError, GiniBankError.amountParsingError(amountString: "28.10:EUR"))
     }
+    
+    func testFormatAmountWithAdditionalDecimals() {
+        let amountToPay = "28.100:EUR"
+        let formattedAmount = Price.formatAmountString(newText: amountToPay)
+        ///
+        /// The last digit is the entered digit so it should shfit all numbers to left to preserve just 2 decimals
+        ///
+        XCTAssertEqual(formattedAmount, "281.00")
+    }
+    
+    func testFormatAmountWithAdditionalZeros() {
+        let amountToPay2 = "0000.0000"
+        let formattedAmount2 = Price.formatAmountString(newText: amountToPay2)
+        XCTAssertEqual(formattedAmount2, "0.00")
+    }
+    
+    func testBigDecimalFormatting() {
+        if let d = Decimal(string: "24007.31"), let str = Price.stringWithoutSymbol(from: d) {
+            XCTAssertEqual(str.trimmingCharacters(in: .whitespaces), "24,007.31")
+            let formatStr = Price.formatAmountString(newText: "24007.31")
+            XCTAssertEqual(formatStr, "24,007.31")
+        }
+    }
 }

@@ -50,18 +50,43 @@ class LineItemDetailsViewController: UIViewController {
     private let itemPriceTextField = GiniTextField()
     
     private let totalPriceStackView = UIStackView()
+    private let totalPriceVatStackView = UIStackView()
     private let totalPriceTitleLabel = UILabel()
     private let totalPriceLabel = UILabel()
+    private let includeVatTitleLabel : UILabel = UILabel()
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            title: .ginibankLocalized(
+                resource: DigitalInvoiceStrings.lineItemSaveButtonTitle
+            ),
+            style: .plain,
+            target: self,
+            action: #selector(saveButtonTapped)
+        )
+        setupView()
+        update()
+        let configuration  = returnAssistantConfiguration ?? ReturnAssistantConfiguration.shared
+        view.backgroundColor = UIColor.from(giniColor: configuration.lineItemDetailsBackgroundColor
+        )
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        guard let lineItem = lineItem, !lineItem.isUserInitiated else { return }
+        
+        if isMovingFromParent, transitionCoordinator?.isInteractive == false {
+            /*
+            Automatically save changes before user returns to main screen, so in case he
+            forgets to save it, changes are not lost
+             */
+            proceedWithSaveAction(shouldPopViewController: false)
+        }
+    }
+    
+    private func setupView() {
         let configuration = returnAssistantConfiguration ?? ReturnAssistantConfiguration.shared
-        
-        navigationItem.rightBarButtonItem = UIBarButtonItem(title: .ginibankLocalized(resource: DigitalInvoiceStrings.lineItemSaveButtonTitle),
-                                                            style: .plain,
-                                                            target: self,
-                                                            action: #selector(saveButtonTapped))
-        
         stackView.translatesAutoresizingMaskIntoConstraints = false
         checkboxContainerStackView.translatesAutoresizingMaskIntoConstraints = false
         checkboxButton.translatesAutoresizingMaskIntoConstraints = false
@@ -71,19 +96,9 @@ class LineItemDetailsViewController: UIViewController {
         quantityTextField.translatesAutoresizingMaskIntoConstraints = false
         multiplicationLabel.translatesAutoresizingMaskIntoConstraints = false
         itemPriceTextField.translatesAutoresizingMaskIntoConstraints = false
-        totalPriceStackView.translatesAutoresizingMaskIntoConstraints = false
-        totalPriceTitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        totalPriceLabel.translatesAutoresizingMaskIntoConstraints = false
-        
-        if #available(iOS 13.0, *) {
-            view.backgroundColor = .systemBackground
-        } else {
-            view.backgroundColor = .white
-        }
         
         stackView.axis = .vertical
         stackView.spacing = 16
-        
         checkboxContainerStackView.axis = .horizontal
         
         checkboxButton.tintColor = returnAssistantConfiguration?.digitalInvoiceLineItemToggleSwitchTintColor ?? returnAssistantConfiguration?.lineItemTintColor
@@ -162,12 +177,8 @@ class LineItemDetailsViewController: UIViewController {
         quantityTextField.prefixText = nil
         quantityTextField.keyboardType = .numberPad
         quantityTextField.delegate = self
-        quantityAndItemPriceContainer.addSubview(quantityTextField)
         
-        multiplicationLabel.font = configuration.lineItemDetailsContentLabelFont
-        multiplicationLabel.textColor = configuration.lineItemDetailsContentLabelColor
-        multiplicationLabel.text = "X"
-        quantityAndItemPriceContainer.addSubview(multiplicationLabel)
+        quantityAndItemPriceContainer.addSubview(quantityTextField)
         
         itemPriceTextField.titleFont = configuration.lineItemDetailsDescriptionLabelFont
         itemPriceTextField.titleTextColor = configuration.lineItemDetailsDescriptionLabelColor
@@ -178,52 +189,26 @@ class LineItemDetailsViewController: UIViewController {
         
         itemPriceTextField.keyboardType = .decimalPad
         itemPriceTextField.delegate = self
+        itemPriceTextField.textFieldType = .amountFieldTag
         quantityAndItemPriceContainer.addSubview(itemPriceTextField)
         
         quantityTextField.leadingAnchor.constraint(equalTo: quantityAndItemPriceContainer.leadingAnchor).isActive = true
         quantityTextField.topAnchor.constraint(equalTo: quantityAndItemPriceContainer.topAnchor).isActive = true
-        quantityTextField.trailingAnchor.constraint(equalTo: multiplicationLabel.leadingAnchor,
+        quantityTextField.trailingAnchor.constraint(equalTo: itemPriceTextField.leadingAnchor,
                                                     constant: -margin).isActive = true
         quantityTextField.bottomAnchor.constraint(equalTo: quantityAndItemPriceContainer.bottomAnchor).isActive = true
-        
-        multiplicationLabel.centerXAnchor.constraint(equalTo: quantityAndItemPriceContainer.centerXAnchor)
-            .isActive = true
-        multiplicationLabel.firstBaselineAnchor.constraint(equalTo: quantityTextField.textFieldFirstBaselineAnchor)
-            .isActive = true
-        multiplicationLabel.trailingAnchor.constraint(equalTo: itemPriceTextField.leadingAnchor,
-                                                      constant: -margin).isActive = true
-        multiplicationLabel.setContentHuggingPriority(.required, for: .horizontal)
-        multiplicationLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
-        multiplicationLabel.accessibilityLabel = .ginibankLocalized(resource: DigitalInvoiceStrings.lineItemMultiplicationAccessibilityLabel)
-        
+        quantityTextField.widthAnchor.constraint(equalTo: itemPriceTextField.widthAnchor, multiplier: 1.0).isActive = true
         itemPriceTextField.topAnchor.constraint(equalTo: quantityAndItemPriceContainer.topAnchor).isActive = true
         itemPriceTextField.trailingAnchor.constraint(equalTo: quantityAndItemPriceContainer.trailingAnchor)
             .isActive = true
         itemPriceTextField.bottomAnchor.constraint(equalTo: quantityAndItemPriceContainer.bottomAnchor).isActive = true
         
         stackView.addArrangedSubview(quantityAndItemPriceContainer)
-        
-        totalPriceStackView.axis = .horizontal
-        totalPriceStackView.spacing = 16
-        
-        let dummyView = UIView()
-        dummyView.translatesAutoresizingMaskIntoConstraints = false
-        
-        totalPriceStackView.addArrangedSubview(dummyView)
-        
-        totalPriceTitleLabel.setContentHuggingPriority(.required, for: .horizontal)
-        totalPriceTitleLabel.font = configuration.lineItemDetailsDescriptionLabelFont
-        totalPriceTitleLabel.textColor = configuration.lineItemDetailsDescriptionLabelColor
-        totalPriceTitleLabel.text = .ginibankLocalized(resource: DigitalInvoiceStrings.lineItemTotalPriceTitle)
-        totalPriceTitleLabel.font = UIFont.systemFont(ofSize: 12)
-        
-        totalPriceStackView.addArrangedSubview(totalPriceTitleLabel)
-        
-        totalPriceLabel.setContentHuggingPriority(.required, for: .horizontal)
-        
+        self.setupTotalPrice(configuration: configuration)
         totalPriceStackView.addArrangedSubview(totalPriceLabel)
-        
-        stackView.addArrangedSubview(totalPriceStackView)
+        totalPriceVatStackView.addArrangedSubview(includeVatTitleLabel)
+        totalPriceVatStackView.addArrangedSubview(totalPriceStackView)
+        stackView.addArrangedSubview(totalPriceVatStackView)
         
         let gestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(backgroundTapped))
         view.addGestureRecognizer(gestureRecognizer)
@@ -236,22 +221,45 @@ class LineItemDetailsViewController: UIViewController {
                                  totalPriceTitleLabel,
                                  totalPriceLabel]
         
-        update()
-        view.backgroundColor = UIColor.from(giniColor: configuration.lineItemDetailsBackgroundColor)
     }
-    
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        guard let lineItem = lineItem, !lineItem.isUserInitiated else { return }
-        
-        if isMovingFromParent, transitionCoordinator?.isInteractive == false {
-            /*
-            Automatically save changes before user returns to main screen, so in case he
-            forgets to save it, changes are not lost
-             */
-            proceedWithSaveAction(shouldPopViewController: false)
-        }
-      }
+
+    private func setupTotalPrice(
+        configuration: ReturnAssistantConfiguration
+    ) {
+        totalPriceStackView.translatesAutoresizingMaskIntoConstraints = false
+        totalPriceVatStackView.translatesAutoresizingMaskIntoConstraints = false
+        totalPriceTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        totalPriceLabel.translatesAutoresizingMaskIntoConstraints = false
+        includeVatTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        totalPriceStackView.distribution = .fill
+        totalPriceStackView.axis = .horizontal
+        totalPriceStackView.spacing = 16
+        totalPriceTitleLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        totalPriceTitleLabel.font = configuration.lineItemDetailsDescriptionLabelFont
+        totalPriceTitleLabel.textColor = configuration.lineItemDetailsContentLabelColor
+        totalPriceTitleLabel.text = .ginibankLocalized(
+            resource: DigitalInvoiceStrings.lineItemTotalPriceTitle
+        )
+        totalPriceTitleLabel.font = configuration.lineItemDetailsTotalPriceMainUnitFont
+        totalPriceStackView.addArrangedSubview(totalPriceTitleLabel)
+        totalPriceLabel.setContentHuggingPriority(.required, for: .horizontal)
+        self.setupVatTitleView(configuration: configuration)
+        totalPriceVatStackView.axis = .vertical
+        totalPriceVatStackView.spacing = 0
+        totalPriceVatStackView.addArrangedSubview(includeVatTitleLabel)
+        totalPriceVatStackView.addArrangedSubview(totalPriceStackView)
+    }
+
+    private func setupVatTitleView(
+        configuration: ReturnAssistantConfiguration
+    ) {
+        includeVatTitleLabel.setContentHuggingPriority(.required, for: .horizontal)
+        includeVatTitleLabel.textAlignment = .right
+        includeVatTitleLabel.textColor =
+        configuration.lineItemDetailsDescriptionLabelColor
+        includeVatTitleLabel.text = .ginibankLocalized(resource: DigitalInvoiceStrings.lineItemIncludeVatTitle)
+        includeVatTitleLabel.font = configuration.lineItemDetailsDescriptionLabelFont
+    }
     
     @objc func saveButtonTapped() {
         proceedWithSaveAction(shouldPopViewController: true)
@@ -266,27 +274,28 @@ class LineItemDetailsViewController: UIViewController {
 
     }
     
+    fileprivate func presentReturnReasonActionSheet(source: UIView, with returnReasons: [ReturnReason]) {
+        DeselectLineItemActionSheet().present(from: self, source: source, returnReasons: returnReasons) { selectedState in
+            switch selectedState {
+            case .selected:
+                break
+            case .deselected(let reason):
+                self.lineItem?.selectedState = .deselected(reason: reason)
+            }
+        }
+    }
+    
     @objc func checkboxButtonTapped() {
-        
         guard let lineItem = lineItem else { return }
-        
         switch lineItem.selectedState {
         case .deselected:
             self.lineItem?.selectedState = .selected
         case .selected:
-            guard let returnReasons = returnReasons else {
+            if let returnReasons = returnReasons, let configuration = returnAssistantConfiguration, configuration.enableReturnReasons {
+                presentReturnReasonActionSheet(source: checkboxButton, with: returnReasons)
+            } else {
                 self.lineItem?.selectedState = .deselected(reason: nil)
                 return
-            }
-            
-            DeselectLineItemActionSheet().present(from: self, source: checkboxButton, returnReasons: returnReasons) { selectedState in
-                
-                switch selectedState {
-                case .selected:
-                    break
-                case .deselected(let reason):
-                    self.lineItem?.selectedState = .deselected(reason: reason)
-                }
             }
         }
     }
@@ -367,7 +376,7 @@ extension LineItemDetailsViewController {
     
     private func decimal(from priceString: String) -> Decimal? {
         let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
+        formatter.numberStyle = .decimal
         formatter.currencySymbol = ""
         return formatter.number(from: priceString)?.decimalValue
     }
