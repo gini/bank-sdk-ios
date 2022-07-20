@@ -15,6 +15,8 @@ protocol LineItemDetailsViewControllerDelegate: AnyObject {
                          index: Int,
                          shouldPopViewController: Bool)
 }
+let kQuantityLimit = 99999
+let kMaxQuantityCharacters = 5
 
 class LineItemDetailsViewController: UIViewController {
 
@@ -54,6 +56,7 @@ class LineItemDetailsViewController: UIViewController {
     private let totalPriceTitleLabel = UILabel()
     private let totalPriceLabel = UILabel()
     private let includeVatTitleLabel : UILabel = UILabel()
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -175,6 +178,7 @@ class LineItemDetailsViewController: UIViewController {
         quantityTextField.textColor = configuration.lineItemDetailsContentLabelColor
         quantityTextField.underscoreColor = configuration.lineItemDetailsContentHighlightedColor
         quantityTextField.prefixText = nil
+        quantityTextField.textFieldType = .quantityFieldTag
         quantityTextField.keyboardType = .numberPad
         quantityTextField.delegate = self
         
@@ -285,11 +289,51 @@ class LineItemDetailsViewController: UIViewController {
         }
     }
     
+    private func updateItemState(isEnabled: Bool) {
+        var color: UIColor
+        if isEnabled {
+            color = returnAssistantConfiguration?.lineItemDetailsContentLabelColor ?? UIColor.black
+        } else {
+            self.view.endEditing(true)
+            color = returnAssistantConfiguration?.digitalInvoiceLineItemsDisabledColor ?? UIColor.lightGray
+        }
+        totalPriceLabel.textColor = color
+        totalPriceTitleLabel.textColor = color
+        
+        itemNameTextField.setupState(
+            isEnabled: isEnabled,
+            color: color)
+        itemPriceTextField.setupState(
+            isEnabled: isEnabled,
+            color: color)
+        itemNameTextField.setupState(
+            isEnabled: isEnabled,
+            color: color)
+        quantityTextField.setupState(
+            isEnabled: isEnabled,
+            color: color)
+        if let lineItem = lineItem, let totalPriceString = lineItem.totalPrice.string {
+            let configuration  = returnAssistantConfiguration ?? ReturnAssistantConfiguration.shared
+            let attributedString =
+                NSMutableAttributedString(string: totalPriceString,
+                                          attributes: [NSAttributedString.Key.foregroundColor: color,
+                                                       NSAttributedString.Key.font: configuration.lineItemDetailsTotalPriceMainUnitFont])
+            
+            attributedString.setAttributes([NSAttributedString.Key.foregroundColor: color,
+                                            NSAttributedString.Key.baselineOffset: 5,
+                                            NSAttributedString.Key.font: configuration.lineItemDetailsTotalPriceFractionalUnitFont],
+                                           range: NSRange(location: totalPriceString.count - 3, length: 3))
+            
+            totalPriceLabel.attributedText = attributedString
+        }
+    }
+    
     @objc func checkboxButtonTapped() {
         guard let lineItem = lineItem else { return }
         switch lineItem.selectedState {
         case .deselected:
             self.lineItem?.selectedState = .selected
+            
         case .selected:
             if let returnReasons = returnReasons, let configuration = returnAssistantConfiguration, configuration.enableReturnReasons {
                 presentReturnReasonActionSheet(source: checkboxButton, with: returnReasons)
@@ -329,28 +373,28 @@ extension LineItemDetailsViewController {
         switch lineItem.selectedState {
         case .selected:
             checkboxButton.checkedState = .checked
+            updateItemState(isEnabled: true)
         case .deselected:
             checkboxButton.checkedState = .unchecked
-        }
-        
-        if let totalPriceString = lineItem.totalPrice.string {
-            let configuration  = returnAssistantConfiguration ?? ReturnAssistantConfiguration.shared
-            let attributedString =
-                NSMutableAttributedString(string: totalPriceString,
-                                          attributes: [NSAttributedString.Key.foregroundColor: configuration.lineItemDetailsContentLabelColor,
-                                                       NSAttributedString.Key.font: configuration.lineItemDetailsTotalPriceMainUnitFont])
-            
-            attributedString.setAttributes([NSAttributedString.Key.foregroundColor: configuration.lineItemDetailsContentLabelColor,
-                                            NSAttributedString.Key.baselineOffset: 5,
-                                            NSAttributedString.Key.font: configuration.lineItemDetailsTotalPriceFractionalUnitFont],
-                                           range: NSRange(location: totalPriceString.count - 3, length: 3))
-            
-            totalPriceLabel.attributedText = attributedString
+            updateItemState(isEnabled: false)
         }
     }
 }
 
 extension LineItemDetailsViewController {
+    
+    private func quantityForLineItem(quantityString: String) -> Int {
+        let quantity = Int(quantityString) ?? 0
+        if quantity > 0 {
+            if quantity > kQuantityLimit {
+                return kQuantityLimit
+            } else {
+                return quantity
+            }
+        } else {
+            return 1
+        }
+    }
     
     private func lineItemFromFields() -> DigitalInvoice.LineItem? {
         let lineItemMaximumAllowedValue = Decimal(25000)
@@ -365,10 +409,15 @@ extension LineItemDetailsViewController {
         }
         if let itemName = itemNameTextField.text {
             let emptyNameCaption: String = .ginibankLocalized(resource: DigitalInvoiceStrings.noTitleArticle)
-            
             lineItem.name = itemName.isEmpty ? emptyNameCaption : itemName
         }
-        lineItem.quantity = Int(quantityTextField.text ?? "") ?? 0
+        
+        let quantity = quantityForLineItem(quantityString: quantityTextField.text ?? "")
+        if quantity == 1 || quantity == kQuantityLimit {
+            // we need to update textfield beacuse the quantity was changed due to the limitations
+            quantityTextField.text = "\(quantity)"
+        }
+        lineItem.quantity = quantity
         lineItem.price = Price(value: itemPriceValue, currencyCode: lineItem.price.currencyCode)
         
         return lineItem

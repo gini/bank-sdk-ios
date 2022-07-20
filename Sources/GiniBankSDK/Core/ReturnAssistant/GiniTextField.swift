@@ -24,6 +24,7 @@ class GiniTextField: UIView {
     
     enum TextFieldType: Int {
         case amountFieldTag
+        case quantityFieldTag
         case other
     }
     
@@ -214,15 +215,25 @@ class GiniTextField: UIView {
     override func becomeFirstResponder() -> Bool {
         textField.becomeFirstResponder()
     }
+    
+    func setupState(isEnabled: Bool, color: UIColor) {
+        textField.isUserInteractionEnabled = isEnabled
+        textColor = color
+    }
 }
 
 extension GiniTextField: UITextFieldDelegate {
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
         underscoreView.backgroundColor = underscoreColor(for: true)
-        if textFieldType == .amountFieldTag, let text = textField.text, text.count > 0 {
-            let trimmedText = textField.text?.trimmingCharacters(in: .whitespaces)
-            textField.text = trimmedText
+        switch textFieldType {
+        case .amountFieldTag:
+            if let text = textField.text, text.count > 0 {
+                let trimmedText = textField.text?.trimmingCharacters(in: .whitespaces)
+                textField.text = trimmedText
+            }
+        default:
+            break
         }
     }
     
@@ -242,9 +253,10 @@ extension GiniTextField: UITextFieldDelegate {
         replacementString string: String
     ) -> Bool {
         if shouldAllowLetters { return true }
-        if textFieldType == .amountFieldTag,
-           let text = textField.text,
-           let textRange = Range(range, in: text) {
+        switch textFieldType {
+        case .amountFieldTag:
+            if let text = textField.text,
+               let textRange = Range(range, in: text) {
                 let updatedText = text.replacingCharacters(in: textRange, with: string)
                 if let newAmount = Price.formatAmountString(newText: updatedText) {
                      // Save the selected text range to restore the cursor position after replacing the text
@@ -257,13 +269,25 @@ extension GiniTextField: UITextFieldDelegate {
                          textField.moveSelectedTextRange(from: selectedRange.start, to: offset)
                      }
                 }
-            return false
-        } else {
+                return false
+            }
+        case .quantityFieldTag:
             guard CharacterSet(charactersIn: "0123456789,.").isSuperset(of: CharacterSet(charactersIn: string)) else {
                 return false
             }
-            return true
+            if let text = textField.text,
+               let textRange = Range(range, in: text) {
+                let updatedText = text.replacingCharacters(in: textRange, with: string)
+                    if updatedText.count > kMaxQuantityCharacters {
+                        return false
+                    }
+            }
+        case .other:
+            guard CharacterSet(charactersIn: "0123456789,.").isSuperset(of: CharacterSet(charactersIn: string)) else {
+                return false
+            }
         }
+        return true
     }
 }
 
