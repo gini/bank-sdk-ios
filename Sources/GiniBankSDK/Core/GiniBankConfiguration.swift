@@ -230,6 +230,11 @@ public final class GiniBankConfiguration: NSObject {
     public var reviewNavigationBarBottomAdapter: ReviewScreenBottomNavigationBarAdapter?
 
     /**
+      * Set an adapter implementation to show a custom bottom navigation bar on the image picker screen.
+     */
+    public var imagePickerNavigationBarBottomAdapter: ImagePickerBottomNavigationBarAdapter?
+
+    /**
      * Set an adapter implementation to show a custom loading indicator on the buttons which support loading.
      */
     public var onButtonLoadingIndicator: OnButtonLoadingIndicatorAdapter?
@@ -877,7 +882,8 @@ public final class GiniBankConfiguration: NSObject {
             ButtonConfiguration(backgroundColor: .GiniBank.dark4,
                                 borderColor: GiniColor(light: UIColor.GiniBank.light6,
                                                       dark: UIColor.clear).uiColor(),
-                                titleColor: .GiniBank.accent1,
+                                titleColor: GiniColor(light: UIColor.GiniBank.dark6,
+                                                      dark: UIColor.GiniBank.light1).uiColor(),
                                 shadowColor: .clear,
                                 cornerRadius: 16,
                                 borderWidth: 2,
@@ -955,6 +961,7 @@ public final class GiniBankConfiguration: NSObject {
     .largeTitle: UIFontMetrics(forTextStyle: .largeTitle).scaledFont(for: UIFont.systemFont(ofSize: 34)),
     .title1: UIFontMetrics(forTextStyle: .title1).scaledFont(for: UIFont.systemFont(ofSize: 28)),
     .title2: UIFontMetrics(forTextStyle: .title2).scaledFont(for: UIFont.systemFont(ofSize: 22)),
+    .title2Bold: UIFontMetrics(forTextStyle: .title2).scaledFont(for: UIFont.boldSystemFont(ofSize: 22)),
     .title3: UIFontMetrics(forTextStyle: .title3).scaledFont(for: UIFont.systemFont(ofSize: 20)),
     .caption1: UIFontMetrics(forTextStyle: .caption1).scaledFont(for: UIFont.systemFont(ofSize: 12)),
     .caption2: UIFontMetrics(forTextStyle: .caption2).scaledFont(for: UIFont.systemFont(ofSize: 11)),
@@ -1010,6 +1017,7 @@ public final class GiniBankConfiguration: NSObject {
         configuration.errorNavigationBarBottomAdapter = self.errorNavigationBarBottomAdapter
         configuration.helpNavigationBarBottomAdapter = self.helpNavigationBarBottomAdapter
         configuration.reviewNavigationBarBottomAdapter = self.reviewNavigationBarBottomAdapter
+        configuration.imagePickerNavigationBarBottomAdapter = self.imagePickerNavigationBarBottomAdapter
         configuration.navigationBarOnboardingTitleContinueButton = self.navigationBarOnboardingTitleContinueButton
         
         configuration.onboardingShowAtLaunch = self.onboardingShowAtLaunch
