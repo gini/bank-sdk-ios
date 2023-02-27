@@ -67,12 +67,12 @@ class DigitalInvoiceItemsCell: UITableViewCell {
     private func setup() {
         
         selectionStyle = .none
-        backgroundColor = returnAssistantConfiguration?.digitalInvoiceBackgroundColor.uiColor() ?? ReturnAssistantConfiguration.shared.digitalInvoiceBackgroundColor.uiColor()
+        backgroundColor = UIColor.from(giniColor: returnAssistantConfiguration?.digitalInvoiceBackgroundColor ?? ReturnAssistantConfiguration.shared.digitalInvoiceBackgroundColor)
         itemsLabel?.translatesAutoresizingMaskIntoConstraints = false
         itemsLabel?.font = returnAssistantConfiguration?.digitalInvoiceItemsSectionHeaderTextFont ??
             ReturnAssistantConfiguration.shared.digitalInvoiceItemsSectionHeaderTextFont
-        itemsLabel?.textColor = (returnAssistantConfiguration?.digitalInvoiceItemsSectionHeaderTextColor ??
-                                 ReturnAssistantConfiguration.shared.digitalInvoiceItemsSectionHeaderTextColor).uiColor()
+        itemsLabel?.textColor = UIColor.from(giniColor:returnAssistantConfiguration?.digitalInvoiceItemsSectionHeaderTextColor ??
+                                                ReturnAssistantConfiguration.shared.digitalInvoiceItemsSectionHeaderTextColor)
         
         contentView.addSubview(itemsLabel ?? UILabel())
         

@@ -33,7 +33,7 @@ struct DigitalLineItemViewModel {
     var quantityColor: UIColor {
         switch lineItem.selectedState {
         case .selected:
-            return returnAssistantConfiguration.digitalInvoiceLineItemQuantityColor.uiColor()
+            return UIColor.from(giniColor: returnAssistantConfiguration.digitalInvoiceLineItemQuantityColor)
         case .deselected:
             return returnAssistantConfiguration.digitalInvoiceLineItemsDisabledColor
         }
@@ -42,7 +42,7 @@ struct DigitalLineItemViewModel {
     var nameLabelColor: UIColor {
         switch lineItem.selectedState {
         case .selected:
-            return returnAssistantConfiguration.digitalInvoiceLineItemNameColor.uiColor()
+            return UIColor.from(giniColor: returnAssistantConfiguration.digitalInvoiceLineItemNameColor)
         case .deselected:
             return returnAssistantConfiguration.digitalInvoiceLineItemsDisabledColor
         }
@@ -51,7 +51,7 @@ struct DigitalLineItemViewModel {
     var priceLabelColor: UIColor {
         switch lineItem.selectedState {
         case .selected:
-            return returnAssistantConfiguration.digitalInvoiceLineItemPriceColor.uiColor()
+            return UIColor.from(giniColor: returnAssistantConfiguration.digitalInvoiceLineItemPriceColor)
         case .deselected:
             return returnAssistantConfiguration.digitalInvoiceLineItemsDisabledColor
         }
@@ -233,13 +233,13 @@ class DigitalLineItemTableViewCell: UITableViewCell {
     }
     
     private func setup() {
-        backgroundColor = (viewModel?.returnAssistantConfiguration.digitalInvoiceBackgroundColor ?? ReturnAssistantConfiguration.shared.digitalInvoiceBackgroundColor).uiColor()
+        backgroundColor = UIColor.from(giniColor: viewModel?.returnAssistantConfiguration.digitalInvoiceBackgroundColor ?? ReturnAssistantConfiguration.shared.digitalInvoiceBackgroundColor)
         selectionStyle = .none
         
         outilneView.layer.borderWidth = 2
         outilneView.layer.cornerRadius = 5
         
-        shadowCastView.layer.backgroundColor = (viewModel?.returnAssistantConfiguration.digitalInvoiceLineItemsBackgroundColor ?? ReturnAssistantConfiguration.shared.digitalInvoiceLineItemsBackgroundColor).uiColor().cgColor
+        shadowCastView.layer.backgroundColor = UIColor.from(giniColor: viewModel?.returnAssistantConfiguration.digitalInvoiceLineItemsBackgroundColor ?? ReturnAssistantConfiguration.shared.digitalInvoiceLineItemsBackgroundColor).cgColor
     }
     
     @objc func modeSwitchValueChange(sender: UISwitch) {

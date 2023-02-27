@@ -103,7 +103,7 @@ public class DigitalInvoiceViewController: UIViewController {
         tableView.separatorStyle = .none
         
         tableView.contentInset = UIEdgeInsets(top: 25, left: 0, bottom: 0, right: 0)
-        tableView.backgroundColor = returnAssistantConfiguration.digitalInvoiceBackgroundColor.uiColor()
+        tableView.backgroundColor = UIColor.from(giniColor: returnAssistantConfiguration.digitalInvoiceBackgroundColor)
     }
     
     fileprivate func configureNavigationBar() {
@@ -184,7 +184,7 @@ public class DigitalInvoiceViewController: UIViewController {
         return .ginibankLocalized(resource: DigitalInvoiceStrings.skipButtonTitle)
     }
     
-    private func getOnboardingScreen() -> DigitalInvoiceOnboardingViewController {
+    private func getOnBoardingScreen() -> DigitalInvoiceOnboardingViewController {
         let bundle = giniBankBundle()
         let storyboard = UIStoryboard(name: "DigitalInvoiceOnboarding", bundle: bundle)
         let digitalInvoiceOnboardingViewController = storyboard.instantiateViewController(withIdentifier: "digitalInvoiceOnboardingViewController") as! DigitalInvoiceOnboardingViewController
@@ -195,9 +195,9 @@ public class DigitalInvoiceViewController: UIViewController {
     }
 
     @objc func whatIsThisTapped(source: UIButton) {
-        //TODO: Show the new help screen here
-        let onboardingVC = getOnboardingScreen()
-        present(onboardingVC, animated: true)
+        let onbardingVC = getOnBoardingScreen()
+        onbardingVC.infoType = .info
+        present(onbardingVC, animated: true)
     }
     
     @objc func closeReturnAssistantOverview(){
@@ -216,8 +216,9 @@ public class DigitalInvoiceViewController: UIViewController {
     
     fileprivate func showDigitalInvoiceOnboarding() {
         if onboardingWillBeShown && !didShowOnboardInCurrentSession {
-            let onboardingVC = getOnboardingScreen()
-            present(onboardingVC, animated: true)
+            let onbardingVC = getOnBoardingScreen()
+            onbardingVC.infoType = .onboarding
+            present(onbardingVC, animated: true)
             didShowOnboardInCurrentSession = true
         }
     }

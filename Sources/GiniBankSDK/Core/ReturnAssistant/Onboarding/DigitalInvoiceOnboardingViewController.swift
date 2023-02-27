@@ -19,55 +19,97 @@ class DigitalInvoiceOnboardingViewController: UIViewController {
     @IBOutlet var topImageView: UIImageView!
     @IBOutlet var firstLabel: UILabel!
     @IBOutlet var secondLabel: UILabel!
-    @IBOutlet var doneButton: MultilineTitleButton!
+    @IBOutlet var doneButton: UIButton!
+    @IBOutlet var hideButton: UIButton!
+    
+    enum InfoType {
+        case onboarding
+        case info
+    }
+    
+    var infoType: InfoType = .onboarding
     
     fileprivate var topImage: UIImage {
         return prefferedImage(named: "digital_invoice_onboarding_icon") ?? UIImage()
     }
     
     fileprivate var firstLabelText: String {
-        return  NSLocalizedStringPreferredGiniBankFormat("ginibank.digitalinvoice.onboarding.text1", comment: "title for the first label on the digital invoice onboarding screen")
+        switch infoType {
+        case .onboarding:
+            return
+                NSLocalizedStringPreferredGiniBankFormat("ginibank.digitalinvoice.onboarding.text1", comment: "title for the first label on the digital invoice onboarding screen")
+        case .info:
+            return
+                NSLocalizedStringPreferredGiniBankFormat("ginibank.digitalinvoice.info.text1", comment: "title for the first label on the digital invoice onboarding screen")
+        }
+        
     }
     
     fileprivate var secondLabelText: String {
-        return NSLocalizedStringPreferredGiniBankFormat("ginibank.digitalinvoice.onboarding.text2", comment: "title for the second label on the digital invoice onboarding screen")
+        switch infoType {
+        case .onboarding:
+            return NSLocalizedStringPreferredGiniBankFormat("ginibank.digitalinvoice.onboarding.text2", comment: "title for the second label on the digital invoice onboarding screen")
+        case .info:
+            return NSLocalizedStringPreferredGiniBankFormat("ginibank.digitalinvoice.info.text2", comment: "title for the second label on the digital invoice onboarding screen")
+        }
     }
     
     fileprivate var doneButtonTitle: String {
         return NSLocalizedStringPreferredGiniBankFormat("ginibank.digitalinvoice.onboarding.donebutton", comment: "title for the done button on the digital invoice onboarding screen")
     }
     
+    fileprivate var hideButtonTitle: String {
+        switch infoType {
+        case .onboarding:
+            return NSLocalizedStringPreferredGiniBankFormat("ginibank.digitalinvoice.onboarding.hidebutton", comment: "title for the hide button on the digital invoice onboarding screen")
+        case .info:
+            return NSLocalizedStringPreferredGiniBankFormat("ginibank.digitalinvoice.info.hidebutton", comment: "title for the hide button on the digital invoice onboarding screen")
+        }
+        
+    }
+    
     override public func viewDidLoad() {
         super.viewDidLoad()
         configureUI()
     }
+    
+    private func setupWhiteButton(button: UIButton) {
+        button.isHidden = false
+        button.layer.cornerRadius = 7.0
+        button.backgroundColor = UIColor.from(giniColor: returnAssistantConfiguration.digitalInvoiceOnboardingDoneButtonBackgroundColor)
+        button.tintColor = UIColor.from(giniColor: returnAssistantConfiguration.digitalInvoiceOnboardingDoneButtonTextColor)
+        button.titleLabel?.font = returnAssistantConfiguration.digitalInvoiceOnboardingDoneButtonTextFont
+    }
 
     fileprivate func configureUI() {
-        let configuration = GiniBankConfiguration.shared
         title = .ginibankLocalized(resource: DigitalInvoiceStrings.screenTitle)
-        contentView.backgroundColor = GiniColor(light: UIColor.GiniBank.light2, dark: UIColor.GiniBank.dark2).uiColor()
+        contentView.backgroundColor = UIColor.from(giniColor: returnAssistantConfiguration.digitalInvoiceOnboardingBackgroundColor)
         
         topImageView.image = topImage
         
         firstLabel.text = firstLabelText
-        firstLabel.font = configuration.textStyleFonts[.title2Bold]
-        firstLabel.textColor = GiniColor(light: UIColor.GiniBank.dark1, dark: UIColor.GiniBank.light1).uiColor()
+        firstLabel.font = returnAssistantConfiguration.digitalInvoiceOnboardingFirstLabelTextFont
+        firstLabel.textColor = UIColor.from(giniColor: returnAssistantConfiguration.digitalInvoiceOnboardingTextColor)
         
         secondLabel.text = secondLabelText
-        secondLabel.font = configuration.textStyleFonts[.headline]
-        secondLabel.textColor = GiniColor(light: UIColor.GiniBank.dark6, dark: UIColor.GiniBank.dark7).uiColor()
+        secondLabel.font = returnAssistantConfiguration.digitalInvoiceOnboardingSecondLabelTextFont
+        secondLabel.textColor = UIColor.from(giniColor: returnAssistantConfiguration.digitalInvoiceOnboardingTextColor)
 
-        doneButton.addTarget(self, action: #selector(doneAction(_:)), for: .touchUpInside)
-        doneButton.setTitle(doneButtonTitle, for: .normal)
-        doneButton.titleLabel?.font = configuration.textStyleFonts[.bodyBold]
-        doneButton.configure(with: configuration.primaryButtonConfiguration)
-
-        if UIDevice.current.isIpad {
-            secondLabel.translatesAutoresizingMaskIntoConstraints = false
-
-            NSLayoutConstraint.activate(
-                [secondLabel.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.5)]
-            )
+        hideButton.addTarget(self, action: #selector(hideAction(_:)), for: .touchUpInside)
+        
+        switch infoType {
+        case .onboarding:
+            hideButton.titleLabel?.font = returnAssistantConfiguration.digitalInvoiceOnboardingHideButtonTextFont
+            hideButton.tintColor = UIColor.from(giniColor: returnAssistantConfiguration.digitalInvoiceOnboardingHideButtonTextColor)
+            doneButton.addTarget(self, action: #selector(doneAction(_:)), for: .touchUpInside)
+            setupWhiteButton(button: doneButton)
+            doneButton.isHidden = false
+            doneButton.setTitle(doneButtonTitle, for: .normal)
+            hideButton.setTitle(hideButtonTitle, for: .normal)
+        case .info:
+            doneButton.isHidden = true
+            setupWhiteButton(button: hideButton)
+            hideButton.setTitle(hideButtonTitle, for: .normal)
         }
     }
     

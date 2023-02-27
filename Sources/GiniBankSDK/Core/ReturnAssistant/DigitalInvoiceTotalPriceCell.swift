@@ -79,7 +79,7 @@ class DigitalInvoiceTotalPriceCell: UITableViewCell {
     private func configureTotalCaptionLabel() {
         totalCaptionLabel.text = .ginibankLocalized(resource: DigitalInvoiceStrings.totalCaptionLabel)
         totalCaptionLabel.font = returnAssistantConfiguration?.digitalInvoiceTotalCaptionLabelFont ?? ReturnAssistantConfiguration.shared.digitalInvoiceTotalCaptionLabelFont
-        totalCaptionLabel.textColor = (returnAssistantConfiguration?.digitalInvoiceTotalCaptionLabelTextColor ?? ReturnAssistantConfiguration.shared.digitalInvoiceTotalCaptionLabelTextColor).uiColor()
+        totalCaptionLabel.textColor = UIColor.from(giniColor: returnAssistantConfiguration?.digitalInvoiceTotalCaptionLabelTextColor ?? ReturnAssistantConfiguration.shared.digitalInvoiceTotalCaptionLabelTextColor)
         
         totalCaptionLabel.translatesAutoresizingMaskIntoConstraints = false
         
@@ -91,7 +91,7 @@ class DigitalInvoiceTotalPriceCell: UITableViewCell {
     private func setup() {
         
         selectionStyle = .none
-        backgroundColor = (returnAssistantConfiguration?.digitalInvoiceBackgroundColor ?? ReturnAssistantConfiguration.shared.digitalInvoiceBackgroundColor).uiColor()
+        backgroundColor = UIColor.from(giniColor: returnAssistantConfiguration?.digitalInvoiceBackgroundColor ?? ReturnAssistantConfiguration.shared.digitalInvoiceBackgroundColor)
         
         contentView.addSubview(totalCaptionLabel)
         contentView.addSubview(totalPriceLabel)

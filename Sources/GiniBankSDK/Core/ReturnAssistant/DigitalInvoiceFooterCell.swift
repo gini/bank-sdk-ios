@@ -61,15 +61,15 @@ class DigitalInvoiceFooterCell: UITableViewCell {
     private func updateUI() {
         let configuration = returnAssistantConfiguration ?? ReturnAssistantConfiguration.shared
         selectionStyle = .none
-        backgroundColor = configuration.digitalInvoiceBackgroundColor.uiColor()
+        backgroundColor = UIColor.from(giniColor: configuration.digitalInvoiceBackgroundColor)
         totalCaptionExplanationLabel.text = .ginibankLocalized(resource: DigitalInvoiceStrings.totalExplanationLabel)
         totalCaptionExplanationLabel.font = configuration.digitalInvoiceTotalExplanationLabelFont
-        totalCaptionExplanationLabel.textColor = configuration.digitalInvoiceTotalExplanationLabelTextColor.uiColor()
+        totalCaptionExplanationLabel.textColor = UIColor.from(giniColor: configuration.digitalInvoiceTotalExplanationLabelTextColor)
         
         messageLabel.text = .ginibankLocalized(resource: DigitalInvoiceStrings.footerMessage)
         messageLabel.numberOfLines = 0
         messageLabel.font = configuration.digitalInvoiceFooterMessageTextFont
-        messageLabel.textColor = configuration.digitalInvoiceFooterMessageTextColor.uiColor()
+        messageLabel.textColor = UIColor.from(giniColor:configuration.digitalInvoiceFooterMessageTextColor)
         messageLabel.textAlignment = .center
         
         payButton.layer.cornerRadius = 7

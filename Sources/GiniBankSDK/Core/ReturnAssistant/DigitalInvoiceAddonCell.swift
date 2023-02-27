@@ -85,7 +85,7 @@ class DigitalInvoiceAddonCell: UITableViewCell {
         let attributedString =
             NSMutableAttributedString(string: "\(addonName):",
                                       attributes: [NSAttributedString.Key.font: config.digitalInvoiceAddonLabelFont,
-                                                   NSAttributedString.Key.foregroundColor: config.digitalInvoiceAddonLabelColor.uiColor()])
+                                                   NSAttributedString.Key.foregroundColor: UIColor.from(giniColor: config.digitalInvoiceAddonLabelColor)])
         
         addonNameLabel.attributedText = attributedString
     }

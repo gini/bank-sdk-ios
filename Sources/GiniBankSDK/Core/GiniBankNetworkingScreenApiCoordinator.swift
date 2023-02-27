@@ -16,7 +16,6 @@ protocol Coordinator: AnyObject {
 
 open class GiniBankNetworkingScreenApiCoordinator: GiniScreenAPICoordinator, GiniCaptureDelegate {
     
-    
     // MARK: - GiniCaptureDelegate
     
     public func didCapture(document: GiniCaptureDocument, networkDelegate: GiniCaptureNetworkDelegate) {
@@ -31,7 +30,7 @@ open class GiniBankNetworkingScreenApiCoordinator: GiniScreenAPICoordinator, Gin
                            value: $0.value,
                            name: QRCodesExtractor.epsCodeUrlKey)
             }
-            let extractionResult = ExtractionResult(extractions: extractions, lineItems: [], returnReasons: [])
+            let extractionResult = ExtractionResult(extractions: extractions, lineItems: [], returnReasons: [], candidates: [:])
 
             deliver(result: extractionResult, analysisDelegate: networkDelegate)
             return
@@ -40,19 +39,12 @@ open class GiniBankNetworkingScreenApiCoordinator: GiniScreenAPICoordinator, Gin
         // When an non reviewable document or an image in multipage mode is captured,
         // it has to be uploaded right away.
         if giniConfiguration.multipageEnabled || !document.isReviewable {
-
-            if (document as? GiniImageDocument)?.isFromOtherApp ?? false {
-                uploadAndStartAnalysisWithReturnAssistant(document: document, networkDelegate: networkDelegate, uploadDidFail: {
-                    self.didCapture(document: document, networkDelegate: networkDelegate)
-                })
-                return
-            }
             if !document.isReviewable {
                 uploadAndStartAnalysisWithReturnAssistant(document: document, networkDelegate: networkDelegate, uploadDidFail: {
                     self.didCapture(document: document, networkDelegate: networkDelegate)
                 })
             } else if giniConfiguration.multipageEnabled {
-                // When multipage is enabled the document upload result should be communicated to the network delegate
+                // When multipage is enabled the document updload result should be communicated to the network delegate
                 uploadWithReturnAssistant(document: document,
                                           didComplete: networkDelegate.uploadDidComplete,
                                           didFail: networkDelegate.uploadDidFail)
@@ -103,7 +95,7 @@ open class GiniBankNetworkingScreenApiCoordinator: GiniScreenAPICoordinator, Gin
 
     weak var resultsDelegate: GiniCaptureResultsDelegate?
     let documentService: DocumentServiceProtocol
-    var giniBankConfiguration = GiniBankConfiguration.shared
+    var giniPayBankConfiguration = GiniBankConfiguration.shared
     
     public init(client: Client,
          resultsDelegate: GiniCaptureResultsDelegate,
@@ -121,8 +113,7 @@ open class GiniBankNetworkingScreenApiCoordinator: GiniScreenAPICoordinator, Gin
 
         visionDelegate = self
         GiniBank.setConfiguration(configuration)
-        giniBankConfiguration = configuration
-        giniBankConfiguration.documentService = documentService
+        giniPayBankConfiguration = configuration
         self.resultsDelegate = resultsDelegate
         self.trackingDelegate = trackingDelegate
     }
@@ -139,8 +130,7 @@ open class GiniBankNetworkingScreenApiCoordinator: GiniScreenAPICoordinator, Gin
 
         super.init(withDelegate: nil,
                    giniConfiguration: captureConfiguration)
-        giniBankConfiguration = configuration
-        giniBankConfiguration.documentService = documentService
+        giniPayBankConfiguration = configuration
         GiniBank.setConfiguration(configuration)
 
         visionDelegate = self
@@ -191,21 +181,25 @@ open class GiniBankNetworkingScreenApiCoordinator: GiniScreenAPICoordinator, Gin
                     return (name, $0)
                 })
 
-                let result = AnalysisResult(extractions: extractions, lineItems: result.lineItems, images: images)
+                let result = AnalysisResult(extractions: extractions, lineItems: result.lineItems, images: images, candidates: result.candidates)
 
                 let documentService = self.documentService
 
-                self.resultsDelegate?.giniCaptureAnalysisDidFinishWith(result: result)
-                documentService.resetToInitialState()
+                self.resultsDelegate?
+                    .giniCaptureAnalysisDidFinishWith(result: result) { updatedExtractions in
+                        if let lineItems = result.lineItems {
+                            documentService.sendFeedback(with: updatedExtractions.map { $0.value }, updatedCompoundExtractions: ["lineItems": lineItems])
+                        } else {
+                            documentService.sendFeedback(with: updatedExtractions.map { $0.value }, updatedCompoundExtractions: nil)
+                        }
+                        documentService.resetToInitialState()
+                    }
             } else {
-                analysisDelegate.tryDisplayNoResultsScreen()
+                self.resultsDelegate?
+                    .giniCaptureAnalysisDidFinishWithoutResults(analysisDelegate.tryDisplayNoResultsScreen())
                 self.documentService.resetToInitialState()
             }
         }
-    }
-
-    public func didPressEnterManually() {
-        self.resultsDelegate?.giniCaptureDidEnterManually()
     }
 }
 
@@ -224,17 +218,25 @@ extension GiniBankNetworkingScreenApiCoordinator {
                 })
                 
                 let documentService = self.documentService
-
+                
                 let result = AnalysisResult(extractions: extractions,
                                             lineItems: result.lineItems,
                                             images: images,
-                                            document: documentService.document)
-                self.resultsDelegate?.giniCaptureAnalysisDidFinishWith(result: result)
+                                            document: documentService.document,
+                                            candidates: result.candidates)
 
-
-                self.giniBankConfiguration.lineItems = result.lineItems
+                self.resultsDelegate?
+                    .giniCaptureAnalysisDidFinishWith(result: result) { updatedExtractions in
+                        if let lineItems = result.lineItems {
+                            documentService.sendFeedback(with: updatedExtractions.map { $0.value }, updatedCompoundExtractions: ["lineItems": lineItems])
+                        } else {
+                            documentService.sendFeedback(with: updatedExtractions.map { $0.value }, updatedCompoundExtractions: nil)
+                        }
+                        documentService.resetToInitialState()
+                    }
             } else {
-                analysisDelegate.tryDisplayNoResultsScreen()
+                self.resultsDelegate?
+                    .giniCaptureAnalysisDidFinishWithoutResults(analysisDelegate.tryDisplayNoResultsScreen())
                 self.documentService.resetToInitialState()
             }
         }
@@ -242,7 +244,7 @@ extension GiniBankNetworkingScreenApiCoordinator {
 
     public func showDigitalInvoiceScreen(digitalInvoice: DigitalInvoice, analysisDelegate: AnalysisDelegate) {
         let digitalInvoiceViewController = DigitalInvoiceViewController()
-        digitalInvoiceViewController.returnAssistantConfiguration = giniBankConfiguration.returnAssistantConfiguration()
+        digitalInvoiceViewController.returnAssistantConfiguration = giniPayBankConfiguration.returnAssistantConfiguration()
         digitalInvoiceViewController.invoice = digitalInvoice
         digitalInvoiceViewController.delegate = self
         digitalInvoiceViewController.analysisDelegate = analysisDelegate
@@ -275,24 +277,20 @@ extension GiniBankNetworkingScreenApiCoordinator {
                 }
 
             case let .failure(error):
-                guard error != .requestCancelled else {
-                    return
-                }
 
-                DispatchQueue.main.async { [weak self] in
-                    guard error != .requestCancelled else { return }
-                    self?.displayError(errorType: ErrorType(error: error), animated: true)
-                    
-                }
+                guard error != .requestCancelled else { return }
+
+                networkDelegate.displayError(withMessage: .localized(resource: AnalysisStrings.analysisErrorMessage),
+                                             andAction: {
+                                                 self.startAnalysisWithReturnAssistant(networkDelegate: networkDelegate)
+                                             })
             }
         }
     }
-    
-    
-    
+
     func uploadWithReturnAssistant(document: GiniCaptureDocument,
                       didComplete: @escaping (GiniCaptureDocument) -> Void,
-                      didFail: @escaping (GiniCaptureDocument, GiniError) -> ()) {
+                      didFail: @escaping (GiniCaptureDocument, Error) -> Void) {
         documentService.upload(document: document) { result in
             switch result {
             case .success:
@@ -309,9 +307,13 @@ extension GiniBankNetworkingScreenApiCoordinator {
         uploadWithReturnAssistant(document: document, didComplete: { _ in
             self.startAnalysisWithReturnAssistant(networkDelegate: networkDelegate)
         }, didFail: { _, error in
-            DispatchQueue.main.async {
-                guard error != .requestCancelled else { return }
-                networkDelegate.displayError(errorType: ErrorType(error: error), animated: true)
+            let error = error as? GiniCaptureError ?? AnalysisError.documentCreation
+
+            guard let analysisError = error as? AnalysisError, case analysisError = AnalysisError.cancelled else {
+                networkDelegate.displayError(withMessage: error.message, andAction: {
+                    uploadDidFail()
+                })
+                return
             }
         })
     }
