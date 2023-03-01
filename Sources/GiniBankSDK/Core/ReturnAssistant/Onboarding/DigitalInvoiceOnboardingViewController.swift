@@ -11,105 +11,136 @@ import GiniCaptureSDK
 protocol DigitalInvoiceOnboardingViewControllerDelegate: AnyObject {
     func didDismissViewController()
 }
-class DigitalInvoiceOnboardingViewController: UIViewController {
+
+final class DigitalInvoiceOnboardingViewController: UIViewController {
     var returnAssistantConfiguration = ReturnAssistantConfiguration()
     weak var delegate: DigitalInvoiceOnboardingViewControllerDelegate?
     
     @IBOutlet var contentView: UIView!
-    @IBOutlet var topImageView: UIImageView!
+    @IBOutlet var topImageView: OnboardingImageView!
     @IBOutlet var firstLabel: UILabel!
     @IBOutlet var secondLabel: UILabel!
-    @IBOutlet var doneButton: UIButton!
-    @IBOutlet var hideButton: UIButton!
-    
-    enum InfoType {
-        case onboarding
-        case info
-    }
-    
-    var infoType: InfoType = .onboarding
-    
-    fileprivate var topImage: UIImage {
+    @IBOutlet weak var scrollView: UIScrollView!
+    @IBOutlet var doneButton: MultilineTitleButton!
+    @IBOutlet weak var scrollViewTopConstraint: NSLayoutConstraint!
+    @IBOutlet weak var scrollViewBottomAnchor: NSLayoutConstraint!
+
+    private var navigationBarBottomAdapter: DigitalInvoiceOnboardingNavigationBarBottomAdapter?
+    private var bottomNavigationBar: UIView?
+
+    private var topImage: UIImage {
         return prefferedImage(named: "digital_invoice_onboarding_icon") ?? UIImage()
     }
     
-    fileprivate var firstLabelText: String {
-        switch infoType {
-        case .onboarding:
-            return
-                NSLocalizedStringPreferredGiniBankFormat("ginibank.digitalinvoice.onboarding.text1", comment: "title for the first label on the digital invoice onboarding screen")
-        case .info:
-            return
-                NSLocalizedStringPreferredGiniBankFormat("ginibank.digitalinvoice.info.text1", comment: "title for the first label on the digital invoice onboarding screen")
-        }
-        
+    private var firstLabelText: String {
+        return  NSLocalizedStringPreferredGiniBankFormat("ginibank.digitalinvoice.onboarding.text1", comment: "title for the first label on the digital invoice onboarding screen")
     }
     
-    fileprivate var secondLabelText: String {
-        switch infoType {
-        case .onboarding:
-            return NSLocalizedStringPreferredGiniBankFormat("ginibank.digitalinvoice.onboarding.text2", comment: "title for the second label on the digital invoice onboarding screen")
-        case .info:
-            return NSLocalizedStringPreferredGiniBankFormat("ginibank.digitalinvoice.info.text2", comment: "title for the second label on the digital invoice onboarding screen")
-        }
+    private var secondLabelText: String {
+        return NSLocalizedStringPreferredGiniBankFormat("ginibank.digitalinvoice.onboarding.text2", comment: "title for the second label on the digital invoice onboarding screen")
     }
     
-    fileprivate var doneButtonTitle: String {
-        return NSLocalizedStringPreferredGiniBankFormat("ginibank.digitalinvoice.onboarding.donebutton", comment: "title for the done button on the digital invoice onboarding screen")
-    }
-    
-    fileprivate var hideButtonTitle: String {
-        switch infoType {
-        case .onboarding:
-            return NSLocalizedStringPreferredGiniBankFormat("ginibank.digitalinvoice.onboarding.hidebutton", comment: "title for the hide button on the digital invoice onboarding screen")
-        case .info:
-            return NSLocalizedStringPreferredGiniBankFormat("ginibank.digitalinvoice.info.hidebutton", comment: "title for the hide button on the digital invoice onboarding screen")
-        }
-        
+    private var doneButtonTitle: String {
+        return NSLocalizedStringPreferredGiniBankFormat("ginibank.digitalinvoice.onboarding.getStartedButton", comment: "title for the done button on the digital invoice onboarding screen")
     }
     
     override public func viewDidLoad() {
         super.viewDidLoad()
         configureUI()
     }
-    
-    private func setupWhiteButton(button: UIButton) {
-        button.isHidden = false
-        button.layer.cornerRadius = 7.0
-        button.backgroundColor = UIColor.from(giniColor: returnAssistantConfiguration.digitalInvoiceOnboardingDoneButtonBackgroundColor)
-        button.tintColor = UIColor.from(giniColor: returnAssistantConfiguration.digitalInvoiceOnboardingDoneButtonTextColor)
-        button.titleLabel?.font = returnAssistantConfiguration.digitalInvoiceOnboardingDoneButtonTextFont
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        let configuration = GiniBankConfiguration.shared
+        configuration.digitalInvoiceOnboardingIllustrationAdapter?.pageDidAppear()
     }
 
-    fileprivate func configureUI() {
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+
+        let configuration = GiniBankConfiguration.shared
+        configuration.digitalInvoiceOnboardingIllustrationAdapter?.pageDidDisappear()
+    }
+
+    private func configureUI() {
+        let configuration = GiniBankConfiguration.shared
         title = .ginibankLocalized(resource: DigitalInvoiceStrings.screenTitle)
-        contentView.backgroundColor = UIColor.from(giniColor: returnAssistantConfiguration.digitalInvoiceOnboardingBackgroundColor)
-        
-        topImageView.image = topImage
+        view.backgroundColor = GiniColor(light: UIColor.GiniBank.light2, dark: UIColor.GiniBank.dark2).uiColor()
+        contentView.backgroundColor = .clear
+
+        if let adapter = configuration.digitalInvoiceOnboardingIllustrationAdapter {
+            topImageView.illustrationAdapter = adapter
+        } else {
+            topImageView.illustrationAdapter = ImageOnboardingIllustrationAdapter()
+            topImageView.icon = topImage
+        }
+
+        topImageView.setupView()
         
         firstLabel.text = firstLabelText
-        firstLabel.font = returnAssistantConfiguration.digitalInvoiceOnboardingFirstLabelTextFont
-        firstLabel.textColor = UIColor.from(giniColor: returnAssistantConfiguration.digitalInvoiceOnboardingTextColor)
+        firstLabel.font = configuration.textStyleFonts[.title2Bold]
+        firstLabel.textColor = GiniColor(light: .GiniBank.dark1, dark: .GiniBank.light1).uiColor()
+        firstLabel.adjustsFontForContentSizeCategory = true
+        firstLabel.accessibilityValue = firstLabelText
         
         secondLabel.text = secondLabelText
-        secondLabel.font = returnAssistantConfiguration.digitalInvoiceOnboardingSecondLabelTextFont
-        secondLabel.textColor = UIColor.from(giniColor: returnAssistantConfiguration.digitalInvoiceOnboardingTextColor)
+        secondLabel.font = configuration.textStyleFonts[.headline]
+        secondLabel.textColor = GiniColor(light: .GiniBank.dark6, dark: .GiniBank.dark7).uiColor()
+        secondLabel.adjustsFontForContentSizeCategory = true
+        secondLabel.accessibilityValue = secondLabelText
 
-        hideButton.addTarget(self, action: #selector(hideAction(_:)), for: .touchUpInside)
-        
-        switch infoType {
-        case .onboarding:
-            hideButton.titleLabel?.font = returnAssistantConfiguration.digitalInvoiceOnboardingHideButtonTextFont
-            hideButton.tintColor = UIColor.from(giniColor: returnAssistantConfiguration.digitalInvoiceOnboardingHideButtonTextColor)
-            doneButton.addTarget(self, action: #selector(doneAction(_:)), for: .touchUpInside)
-            setupWhiteButton(button: doneButton)
-            doneButton.isHidden = false
-            doneButton.setTitle(doneButtonTitle, for: .normal)
-            hideButton.setTitle(hideButtonTitle, for: .normal)
-        case .info:
+        doneButton.addTarget(self, action: #selector(doneAction(_:)), for: .touchUpInside)
+        doneButton.setTitle(doneButtonTitle, for: .normal)
+        doneButton.titleLabel?.font = configuration.textStyleFonts[.bodyBold]
+        doneButton.titleLabel?.adjustsFontForContentSizeCategory = true
+        doneButton.accessibilityValue = doneButtonTitle
+        doneButton.configure(with: configuration.primaryButtonConfiguration)
+
+        if configuration.bottomNavigationBarEnabled {
             doneButton.isHidden = true
-            setupWhiteButton(button: hideButton)
-            hideButton.setTitle(hideButtonTitle, for: .normal)
+
+            NSLayoutConstraint.deactivate([scrollViewBottomAnchor])
+
+            if let bottomBarAdapter = configuration.digitalInvoiceOnboardingNavigationBarBottomAdapter {
+                navigationBarBottomAdapter = bottomBarAdapter
+            } else {
+                navigationBarBottomAdapter = DefaultDigitalInvoiceOnboardingNavigationBarBottomAdapter()
+            }
+
+            navigationBarBottomAdapter?.setGetStartedButtonClickedActionCallback { [weak self] in
+                self?.dismissViewController()
+            }
+
+            if let navigationBar = navigationBarBottomAdapter?.injectedView() {
+                bottomNavigationBar = navigationBar
+                view.addSubview(navigationBar)
+
+                navigationBar.translatesAutoresizingMaskIntoConstraints = false
+
+                NSLayoutConstraint.activate([
+                    navigationBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                    navigationBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                    navigationBar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                    navigationBar.heightAnchor.constraint(equalToConstant: 114),
+                    navigationBar.topAnchor.constraint(equalTo: scrollView.bottomAnchor)
+                ])
+            }
+        }
+
+        configureConstraints()
+    }
+
+    private func configureConstraints() {
+        if UIDevice.current.isIpad {
+            scrollViewTopConstraint.constant = view.frame.width > view.frame.height ? 16 : 96
+
+            let multiplier: CGFloat = view.frame.width > view.frame.height ? 0.4 : 0.6
+
+            scrollView.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate(
+                [scrollView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: multiplier)]
+            )
         }
     }
     
@@ -122,7 +153,7 @@ class DigitalInvoiceOnboardingViewController: UIViewController {
         dismissViewController()
     }
     
-    func dismissViewController() {
+    private func dismissViewController() {
         dismiss(animated: true) {
             self.delegate?.didDismissViewController()
         }

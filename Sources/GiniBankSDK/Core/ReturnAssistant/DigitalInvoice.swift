@@ -156,8 +156,7 @@ extension DigitalInvoice {
             
             return ExtractionResult(extractions: _extractionResult.extractions,
                                     lineItems: lineItems.map { $0.extractions },
-                                    returnReasons: returnReasons,
-                                    candidates: _extractionResult.candidates)
+                                    returnReasons: returnReasons)
         }
         
         let modifiedExtractions = _extractionResult.extractions.map { extraction -> Extraction in
@@ -171,7 +170,6 @@ extension DigitalInvoice {
         
         return ExtractionResult(extractions: modifiedExtractions,
                                 lineItems: lineItems.map { $0.extractions },
-                                returnReasons: returnReasons,
-                                candidates: _extractionResult.candidates)
+                                returnReasons: returnReasons)
     }
 }

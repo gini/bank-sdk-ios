@@ -103,7 +103,7 @@ public class DigitalInvoiceViewController: UIViewController {
         tableView.separatorStyle = .none
         
         tableView.contentInset = UIEdgeInsets(top: 25, left: 0, bottom: 0, right: 0)
-        tableView.backgroundColor = UIColor.from(giniColor: returnAssistantConfiguration.digitalInvoiceBackgroundColor)
+        tableView.backgroundColor = returnAssistantConfiguration.digitalInvoiceBackgroundColor.uiColor()
     }
     
     fileprivate func configureNavigationBar() {
@@ -179,25 +179,12 @@ public class DigitalInvoiceViewController: UIViewController {
     @objc func skipButtonTapped() {
         payButtonTapped()
     }
-    
-    private func skipButtonTitle() -> String {
-        return .ginibankLocalized(resource: DigitalInvoiceStrings.skipButtonTitle)
-    }
-    
-    private func getOnBoardingScreen() -> DigitalInvoiceOnboardingViewController {
-        let bundle = giniBankBundle()
-        let storyboard = UIStoryboard(name: "DigitalInvoiceOnboarding", bundle: bundle)
-        let digitalInvoiceOnboardingViewController = storyboard.instantiateViewController(withIdentifier: "digitalInvoiceOnboardingViewController") as! DigitalInvoiceOnboardingViewController
-        
-        digitalInvoiceOnboardingViewController.delegate = self
-        digitalInvoiceOnboardingViewController.returnAssistantConfiguration = returnAssistantConfiguration
-        return digitalInvoiceOnboardingViewController
-    }
 
     @objc func whatIsThisTapped(source: UIButton) {
-        let onbardingVC = getOnBoardingScreen()
-        onbardingVC.infoType = .info
-        present(onbardingVC, animated: true)
+        let digitalInvoiceHelViewModel = DigitalInvoiceHelpViewModel()
+        let digitalInvoiceHelpViewController = DigitalInvoiceHelpViewController(viewModel: digitalInvoiceHelViewModel)
+
+        navigationController?.pushViewController(digitalInvoiceHelpViewController, animated: true)
     }
     
     @objc func closeReturnAssistantOverview(){
@@ -216,9 +203,13 @@ public class DigitalInvoiceViewController: UIViewController {
     
     fileprivate func showDigitalInvoiceOnboarding() {
         if onboardingWillBeShown && !didShowOnboardInCurrentSession {
-            let onbardingVC = getOnBoardingScreen()
-            onbardingVC.infoType = .onboarding
-            present(onbardingVC, animated: true)
+            let storyboard = UIStoryboard(name: "DigitalInvoiceOnboarding", bundle: giniBankBundle())
+            let digitalInvoiceOnboardingViewController = storyboard.instantiateViewController(withIdentifier: "digitalInvoiceOnboardingViewController") as! DigitalInvoiceOnboardingViewController
+
+            digitalInvoiceOnboardingViewController.delegate = self
+            digitalInvoiceOnboardingViewController.returnAssistantConfiguration = returnAssistantConfiguration
+
+            present(digitalInvoiceOnboardingViewController, animated: true)
             didShowOnboardInCurrentSession = true
         }
     }
@@ -364,7 +355,8 @@ extension DigitalInvoiceViewController: UITableViewDelegate, UITableViewDataSour
                     buttonTitle,
                     for: .normal)
                 cell.shouldSetUIForInaccurateResults(invoice.inaccurateResults)
-                cell.skipButton.setTitle(skipButtonTitle(), for: .normal)
+                cell.skipButton.setTitle(.ginibankLocalized(resource: DigitalInvoiceStrings.skipButtonTitle),
+                                         for: .normal)
                 cell.skipButton.addTarget(self, action: #selector(skipButtonTapped), for: .touchUpInside)
             } else {
                 let buttonTitle = vm.payButtonTitle(
