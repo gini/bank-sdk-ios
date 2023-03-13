@@ -125,40 +125,22 @@ You can also disable the supported formats help screen by passing `false` to
 You can show a custom loading indicator with custom animation support on the process button.
 Your custom loading indicator should implement `OnButtonLoadingIndicatorAdapter` interface and be passed  to `GiniBankConfiguration.shared.onButtonLoadingIndicator`.
 
-The example implementation is available [here](https://github.com/gini/gini-mobile-ios/blob/GiniCaptureSDK%3B3.0.0-beta05/BankSDK/GiniBankSDKExample/GiniBankSDKExample/CustomLoadingIndicator.swift#L36).
+The example implementation is available [here](https://github.com/gini/gini-mobile-ios/blob/GiniCaptureSDK%3B3.0.0-beta06/BankSDK/GiniBankSDKExample/GiniBankSDKExample/CustomLoadingIndicator.swift#L36).
 
 # Analysis screen customization
 
 You can show a custom loading indicator with custom animation support.
 Your custom loading indicator should implement `CustomLoadingIndicatorAdapter` interface and be passed  to `GiniBankConfiguration.shared.customLoadingIndicator`.
 
-The example implementation is available [here](https://github.com/gini/gini-mobile-ios/blob/GiniCaptureSDK%3B3.0.0-beta05/BankSDK/GiniBankSDKExample/GiniBankSDKExample/CustomLoadingIndicator.swift).
+The example implementation is available [here](https://github.com/gini/gini-mobile-ios/blob/GiniCaptureSDK%3B3.0.0-beta06/BankSDK/GiniBankSDKExample/GiniBankSDKExample/CustomLoadingIndicator.swift).
 
 # No result screen customization
-
-You can show custom back navigation button on bottom navigation bar. You can pass your custom `NoResultBottomNavigationBarAdapter` implementation to
- `GiniBankConfiguration.shared.errorNavigationBarBottomAdapter`:
-
-``` swift
-     let customNoResultNavigationBarBottomAdapter = CustomNoResultBottomNavigationBarAdapter()
-
-     GiniBankConfiguration.shared.noResultNavigationBarBottomAdapter = customNoResultNavigationBarBottomAdapter
-```
 
 You can show your own UI if an error occured and the user chooses to enter details manually. For this you must to implement `GiniCaptureResultsDelegate.giniCaptureDidEnterManually() `.
 
 The buttom "Retake images" will be shown only if you took or imported images.
 
 # Error screen customization
-
- You can show custom back navigation button on bottom navigation bar. You can pass your custom `ErrorBottomNavigationBarAdapter` implementation to
- `GiniBankConfiguration.shared.errorNavigationBarBottomAdapter`:
-
-``` swift
-     let customErrorNavigationBarBottomAdapter = CustomErrorNavigationBarBottomAdapter()
-
-     GiniBankConfiguration.shared.errorNavigationBarBottomAdapter = customErrorNavigationBarBottomAdapter
-```
 
 You can show your own UI if an error occured and the user chooses to enter details manually. For this you must to implement `GiniCaptureResultsDelegate.giniCaptureDidEnterManually() `.
 
