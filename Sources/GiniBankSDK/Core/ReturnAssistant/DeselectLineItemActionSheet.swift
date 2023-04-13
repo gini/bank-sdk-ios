@@ -16,7 +16,6 @@ class DeselectLineItemActionSheet {
         let actionSheet = UIAlertController(title: nil,
                                             message: NSLocalizedStringPreferredGiniBankFormat("ginibank.digitalinvoice.deselectreasonactionsheet.message", comment: "Info message when deselect a return reason"),
                                             preferredStyle: .actionSheet)
-        actionSheet.view.tintColor = .GiniBank.accent1
 
         for reason in returnReasons {
             actionSheet.addAction(UIAlertAction(title: reason.labelInLocalLanguageOrGerman,

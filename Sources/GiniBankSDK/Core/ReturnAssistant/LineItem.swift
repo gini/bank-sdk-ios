@@ -12,7 +12,7 @@ extension DigitalInvoice {
     
     struct LineItem {
         
-        enum SelectedState: Equatable {
+        enum SelectedState {
             case selected
             case deselected(reason: ReturnReason?)
         }
@@ -124,6 +124,7 @@ extension DigitalInvoice {
 }
 
 extension ReturnReason {
+    
     var labelInLocalLanguageOrGerman: String {
         get {
             localizedLabels[Locale.current.languageCode ?? "de"] ?? localizedLabels["de"] ?? ""

@@ -8,7 +8,7 @@
 import Foundation
 import GiniBankAPILibrary
 
-struct DigitalInvoiceAddon: Equatable {
+struct DigitalInvoiceAddon {
     let price: Price
     var name: String {
         return addonExtraction.name
