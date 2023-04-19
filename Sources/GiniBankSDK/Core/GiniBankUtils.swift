@@ -71,24 +71,6 @@ func prefferedImage(named name: String) -> UIImage? {
 }
 
 /**
- Returns an optional `UIColor` instance with the given `name` preferably from the client's bundle.
- 
- - parameter name: The name of the UIColor from `GiniColors` asset catalog.
- 
- - returns: UIColor if found with name.
- */
-func prefferedColor(named name: String) -> UIColor {
-    if let clientColor = UIColor(named: name) {
-        return clientColor
-    }
-    if let color = UIColor(named: name, in: giniBankBundle(), compatibleWith: nil) {
-        return color
-    } else {
-        fatalError("The color named '\(name)' does not exist.")
-    }
-}
-
-/**
  Getting the payment request id from incoming url
  Should be called inside function:
  func application(_ application: UIApplication,
