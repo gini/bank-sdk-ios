@@ -27,7 +27,7 @@ import GiniCaptureSDK
         self.giniApiLib = giniApiLib
         paymentService = giniApiLib.paymentService()
     }
-
+    
     // MARK: - Gini Pay Connect
 
     /**
@@ -40,8 +40,7 @@ import GiniCaptureSDK
      In case of failure error from the server side.
 
      */
-    public func receivePaymentRequest(paymentRequestId: String,
-                                      completion: @escaping (Result<PaymentRequest, GiniBankError>) -> Void) {
+    public func receivePaymentRequest(paymentRequestId: String, completion: @escaping (Result<PaymentRequest, GiniBankError>) -> Void) {
         paymentService.paymentRequest(id: paymentRequestId) { result in
             DispatchQueue.main.async {
                 switch result {
@@ -66,10 +65,8 @@ import GiniCaptureSDK
      If the amount string could not be parsed throws `amountParsingError`
 
      */
-    public func resolvePaymentRequest(paymentRequesId: String,
-                                      paymentInfo: PaymentInfo,
-                                      completion: @escaping (Result<ResolvedPaymentRequest, GiniBankError>) -> Void) {
-        var amountString: String?
+    public func resolvePaymentRequest(paymentRequesId: String, paymentInfo: PaymentInfo, completion: @escaping (Result<ResolvedPaymentRequest, GiniBankError>) -> Void) {
+        var amountString : String?
         do {
             amountString = try String.parseAmountStringToBackendFormat(string: paymentInfo.amount)
         } catch let error as GiniBankError {
@@ -80,12 +77,7 @@ import GiniCaptureSDK
         guard let amountString = amountString else {
             return
         }
-        paymentService.resolvePaymentRequest(id: paymentRequesId,
-                                             recipient: paymentInfo.recipient,
-                                             iban: paymentInfo.iban,
-                                             amount: amountString,
-                                             purpose: paymentInfo.purpose,
-                                             completion: { result in
+        paymentService.resolvePaymentRequest(id: paymentRequesId, recipient: paymentInfo.recipient, iban: paymentInfo.iban, amount: amountString, purpose: paymentInfo.purpose, completion: { result in
             DispatchQueue.main.async {
                 switch result {
                 case let .success(resolvedPayment):
@@ -99,7 +91,7 @@ import GiniCaptureSDK
 
     /**
      Returns back to the business app.
-
+     
      - parameter resolvedPaymentRequest: resolved payment request returned by method 'resolvePaymentRequest'
 
      */
@@ -110,52 +102,56 @@ import GiniCaptureSDK
             }
         }
     }
-
+    
     // MARK: - Screen API without Networking - Initializers for 'UIViewController'
-
+    
     /**
      Returns a view controller which will handle the analysis process.
-
+     
+     - note: Screen API only.
+     
      - parameter delegate: An instance conforming to the `GiniCaptureDelegate` protocol.
      - parameter importedDocuments: Documents that come from a source different than `CameraViewController`.
      There should be either images or one PDF, and they should be validated before calling this method.
-
+     
      - returns: A presentable view controller.
      */
     @objc public class func viewController(withDelegate delegate: GiniCaptureDelegate,
                                            importedDocuments: [GiniCaptureDocument]? = nil) -> UIViewController {
-
+                
         let screenCoordinator = GiniScreenAPICoordinator(withDelegate: delegate,
-                                                         giniConfiguration:
-                                                            GiniBankConfiguration.shared.captureConfiguration())
-
+                                                         giniConfiguration: GiniBankConfiguration.shared.captureConfiguration())
+        
         return screenCoordinator.start(withDocuments: importedDocuments)
     }
-
+    
     /**
      Returns a view controller which will handle the analysis process.
-
+     
+     - note: Screen API only.
+     
      - parameter delegate: An instance conforming to the `GiniCaptureDelegate` protocol.
      - parameter importedDocuments: Documents that come from a source different than `CameraViewController`.
      There should be either images or one PDF, and they should be validated before calling this method.
      - parameter trackingDelegate: A delegate object to receive user events
-
+     
      - returns: A presentable view controller.
      */
     public class func viewController(withDelegate delegate: GiniCaptureDelegate,
-                                     importedDocuments: [GiniCaptureDocument]? = nil,
-                                     trackingDelegate: GiniCaptureTrackingDelegate? = nil) -> UIViewController {
-        let configuration = GiniBankConfiguration.shared.captureConfiguration()
+                                           importedDocuments: [GiniCaptureDocument]? = nil,
+                                           trackingDelegate: GiniCaptureTrackingDelegate? = nil) -> UIViewController {
         let screenCoordinator = GiniScreenAPICoordinator(withDelegate: delegate,
-                                                         giniConfiguration: configuration)
+                                                         giniConfiguration: GiniBankConfiguration.shared.captureConfiguration())
         screenCoordinator.trackingDelegate = trackingDelegate
-
+        
         return screenCoordinator.start(withDocuments: importedDocuments)
     }
-
+    
     /**
      Returns a view controller which will handle the analysis process.
 
+     - note: Screen API only.
+     
      - parameter delegate: An instance conforming to the `GiniCaptureDelegate` protocol.
      - parameter importedDocument: Documents that come from a source different than CameraViewController.
      There should be either images or one PDF, and they should be validated before calling this method.
@@ -168,13 +164,15 @@ import GiniCaptureSDK
         if let importedDocument = importedDocument {
             documents = [importedDocument]
         }
-
+        
         return viewController(withDelegate: delegate, importedDocuments: documents)
     }
-
+    
     /**
      Returns a view controller which will handle the analysis process.
 
+     - note: Screen API only.
+     
      - parameter delegate: An instance conforming to the `GiniCaptureDelegate` protocol.
      - parameter importedDocument: Documents that come from a source different than CameraViewController.
      There should be either images or one PDF, and they should be validated before calling this method.
@@ -183,20 +181,22 @@ import GiniCaptureSDK
      - returns: A presentable view controller.
      */
     public class func viewController(withDelegate delegate: GiniCaptureDelegate,
-                                     importedDocument: GiniCaptureDocument?,
-                                     trackingDelegate: GiniCaptureTrackingDelegate?) -> UIViewController {
+                                           importedDocument: GiniCaptureDocument? = nil,
+                                           trackingDelegate: GiniCaptureTrackingDelegate? = nil) -> UIViewController {
         var documents: [GiniCaptureDocument]?
         if let importedDocument = importedDocument {
             documents = [importedDocument]
         }
-
+        
         return viewController(withDelegate: delegate, importedDocuments: documents, trackingDelegate: trackingDelegate)
     }
-
+    
     /**
      Returns a view controller which will handle the analysis process.
      Allows to set a custom configuration to change the look and feel of the  Gini Bank SDK.
-
+     
+     - note: Screen API only.
+     
      - parameter delegate:      An instance conforming to the `GiniCaptureDelegate` protocol.
      - parameter configuration: The bank configuration to set.
      - parameter importedDocument: Documents that come from a source different than CameraViewController.
@@ -210,11 +210,13 @@ import GiniCaptureSDK
         GiniBank.setConfiguration(configuration)
         return viewController(withDelegate: delegate, importedDocument: importedDocument)
     }
-
+    
     /**
      Returns a view controller which will handle the analysis process.
      Allows to set a custom configuration to change the look and feel of the Gini Bank SDK.
-
+     
+     - note: Screen API only.
+     
      - parameter delegate:      An instance conforming to the `GiniCaptureDelegate` protocol.
      - parameter configuration: The configuration to set.
      - parameter importedDocument: Documents that come from a source different than CameraViewController.
@@ -224,19 +226,17 @@ import GiniCaptureSDK
      - returns: A presentable view controller.
      */
     public class func viewController(withDelegate delegate: GiniCaptureDelegate,
-                                     withConfiguration configuration: GiniBankConfiguration,
-                                     importedDocument: GiniCaptureDocument? = nil,
-                                     trackingDelegate: GiniCaptureTrackingDelegate? = nil) -> UIViewController {
+                                           withConfiguration configuration: GiniBankConfiguration,
+                                           importedDocument: GiniCaptureDocument? = nil,
+                                           trackingDelegate: GiniCaptureTrackingDelegate? = nil) -> UIViewController {
         GiniBank.setConfiguration(configuration)
-        return viewController(withDelegate: delegate,
-                              importedDocument: importedDocument,
-                              trackingDelegate: trackingDelegate)
+        return viewController(withDelegate: delegate, importedDocument: importedDocument, trackingDelegate: trackingDelegate)
     }
-
+    
     /**
      Sets a configuration which is used to customize the look and feel of the Gini Bank SDK,
      for example to change texts and colors displayed to the user.
-
+     
      - parameter configuration: The bank configuration to set.
      */
     @objc public class func setConfiguration(_ configuration: GiniBankConfiguration) {
