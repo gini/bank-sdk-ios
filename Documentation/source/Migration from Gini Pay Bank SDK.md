@@ -9,7 +9,7 @@ dependencies: [
     .package(url: "https://github.com/gini/bank-sdk-ios.git", .exact("1.0.0"))
 ]
 ```
-**Note: Availible from iOS 12**
+**Note: Available from iOS 12**
 In case that you want to use the certificate pinning in the library, add `GiniBankSDKPinning`:
 ```swif
 dependencies: [
@@ -31,7 +31,7 @@ The Gini Bank API Library will be used instead of the Gini Pay Api Library.
 
 ## Configuration
 
-For customization the Gini Bank SDK uses `GiniBankConfiguration` class instead of `GiniPayBankConfiguration`. All settings from the `GiniPayBankConfiguration` are availible in `GiniBankConfiguration`.
+For customization the Gini Bank SDK uses `GiniBankConfiguration` class instead of `GiniPayBankConfiguration`. All settings from the `GiniPayBankConfiguration` are available in `GiniBankConfiguration`.
 
 ## Screen API
 
