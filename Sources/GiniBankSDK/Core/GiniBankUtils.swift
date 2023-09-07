@@ -8,7 +8,7 @@
 import GiniCaptureSDK
 import Foundation
 import UIKit
-public protocol GiniBankAnalysisDelegate: AnalysisDelegate {}
+public protocol GiniBankAnalysisDelegate : AnalysisDelegate {}
 
 /**
  Returns a localized string resource preferably from the client's bundle. Used in Return Assistant Screens.
@@ -22,33 +22,52 @@ func NSLocalizedStringPreferredGiniBankFormat(_ key: String,
                                               fallbackKey: String = "",
                                               comment: String,
                                               isCustomizable: Bool = true) -> String {
-    var clientString: String
-    var fallbackClientString: String
-    if let localizedResourceName = GiniBankConfiguration.shared.localizedStringsTableName {
-        clientString = NSLocalizedString(key, tableName: localizedResourceName, comment: comment)
-        fallbackClientString = NSLocalizedString(fallbackKey, tableName: localizedResourceName, comment: comment)
-    } else {
-        clientString = NSLocalizedString(key, comment: comment)
-        fallbackClientString = NSLocalizedString(fallbackKey, comment: comment)
-    }
+    if isCustomizable {
+        if let clientLocalizedStringMainBundle = clientLocalizedString(key, fallbackKey: fallbackKey, comment: comment, bundle: .main) {
 
-    let format: String
-
-    if (clientString.lowercased() != key.lowercased() || fallbackClientString.lowercased() != fallbackKey.lowercased())
-        && isCustomizable {
-        format = clientString
-    } else {
-        let bundle = giniBankBundle()
-        var defaultFormat = NSLocalizedString(key, bundle: bundle, comment: comment)
-
-        if defaultFormat.lowercased() == key.lowercased() {
-            defaultFormat = NSLocalizedString(fallbackKey, bundle: bundle, comment: comment)
+            return clientLocalizedStringMainBundle
+            
+        } else if let customBundle = GiniBankConfiguration.shared.customResourceBundle,
+                  let clientLocalizedStringCustomBundle = clientLocalizedString(key, fallbackKey: fallbackKey, comment: comment, bundle: customBundle) {
+            
+            return clientLocalizedStringCustomBundle
         }
-
-        format = defaultFormat
     }
+    
+    return giniLocalizedString(key, fallbackKey: fallbackKey, comment: comment)
+}
 
-    return format
+private func clientLocalizedString(_ key: String,
+                                   fallbackKey: String,
+                                   comment: String,
+                                   bundle: Bundle) -> String? {
+    var clientString = NSLocalizedString(key, bundle: bundle, comment: comment)
+    var fallbackClientString = NSLocalizedString(fallbackKey,bundle: bundle, comment: comment)
+    
+    if let localizedResourceName = GiniBankConfiguration.shared.localizedStringsTableName {
+        clientString = NSLocalizedString(key, tableName: localizedResourceName, bundle: bundle, comment: comment)
+        fallbackClientString = NSLocalizedString(fallbackKey,tableName: localizedResourceName, bundle: bundle, comment: comment)
+    }
+    
+    guard (clientString.lowercased() != key.lowercased() || fallbackClientString.lowercased() != fallbackKey.lowercased()) else {
+        return nil
+    }
+    
+    return clientString
+}
+
+private func giniLocalizedString(_ key: String,
+                                 fallbackKey: String,
+                                 comment: String) -> String {
+    let bundle = giniBankBundle()
+    
+    var defaultFormat = NSLocalizedString(key, bundle: bundle, comment: comment)
+    
+    if defaultFormat.lowercased() == key.lowercased() {
+        defaultFormat = NSLocalizedString(fallbackKey, bundle: bundle, comment: comment)
+    }
+    
+    return defaultFormat
 }
 
 func giniBankBundle() -> Bundle {
@@ -63,29 +82,15 @@ func giniBankBundle() -> Bundle {
  - returns: Image if found with name.
  */
 func prefferedImage(named name: String) -> UIImage? {
-    if let clientImage = UIImage(named: name) {
-        return clientImage
+    if let mainBundleImage = UIImage(named: name, in: Bundle.main, compatibleWith: nil) {
+        return mainBundleImage
     }
-    let bundle = giniBankBundle()
-    return UIImage(named: name, in: bundle, compatibleWith: nil)
-}
-
-/**
- Returns an optional `UIColor` instance with the given `name` preferably from the client's bundle.
- 
- - parameter name: The name of the UIColor from `GiniColors` asset catalog.
- 
- - returns: UIColor if found with name.
- */
-func prefferedColor(named name: String) -> UIColor {
-    if let clientColor = UIColor(named: name) {
-        return clientColor
+    if let customBundle = GiniBankConfiguration.shared.customResourceBundle,
+       let customBundleImage = UIImage(named: name, in: customBundle, compatibleWith: nil) {
+        return customBundleImage
     }
-    if let color = UIColor(named: name, in: giniBankBundle(), compatibleWith: nil) {
-        return color
-    } else {
-        fatalError("The color named '\(name)' does not exist.")
-    }
+    
+    return UIImage(named: name, in: giniBankBundle(), compatibleWith: nil)
 }
 
 /**
@@ -108,7 +113,7 @@ public func receivePaymentRequestId(url: URL, completion: @escaping (Result<Stri
         completion(.failure(.noRequestId))
         return
     }
-
+    
     if let requestId = params.first(where: { $0.name == "id" })?.value {
         completion(.success(requestId))
         print("requestID = \(requestId)")
@@ -122,7 +127,7 @@ public func receivePaymentRequestId(url: URL, completion: @escaping (Result<Stri
 private class BankSDKBundleFinder {}
 
 extension Foundation.Bundle {
-
+    
     /**
      The resource bundle associated with the current module.
      - important: When `GiniBankSDK` is distributed via Swift Package Manager, it will be synthesized automatically in the name of `Bundle.module`.
@@ -130,7 +135,7 @@ extension Foundation.Bundle {
     static var resource: Bundle = {
         let moduleName = "GiniBankSDK"
         let bundleName = "\(moduleName)_\(moduleName)"
-
+        
         let candidates = [
             // Bundle should be present here when the package is linked into an App.
             Bundle.main.resourceURL,
@@ -139,7 +144,8 @@ extension Foundation.Bundle {
             Bundle(for: BankSDKBundleFinder.self).resourceURL,
 
             // For command-line tools.
-            Bundle.main.bundleURL]
+            Bundle.main.bundleURL,
+        ]
 
         for candidate in candidates {
             let bundlePath = candidate?.appendingPathComponent(bundleName + ".bundle")

@@ -31,10 +31,6 @@ final class CameraMock: CameraProtocol {
     func captureStillImage(completion: @escaping (Data?, CameraError?) -> Void) {
         
     }
-
-    func switchTo(newVideoDevice: AVCaptureDevice) {
-
-    }
     
     func focus(withMode mode: AVCaptureDevice.FocusMode,
                exposeWithMode exposureMode: AVCaptureDevice.ExposureMode,
@@ -53,7 +49,7 @@ final class CameraMock: CameraProtocol {
     }
     
     func setupQRScanningOutput(completion: @escaping ((GiniCaptureSDK.CameraError?) -> Void)) {
-
+        
     }
     
     func start() {

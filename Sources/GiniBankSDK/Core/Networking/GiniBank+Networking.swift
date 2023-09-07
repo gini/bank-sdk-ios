@@ -10,7 +10,7 @@ import UIKit
 import GiniCaptureSDK
 import GiniBankAPILibrary
 extension GiniBank {
-
+    
     // MARK: - Screen API with Default Networking - Initializers for 'UIViewController'
 
     /**
@@ -25,6 +25,8 @@ extension GiniBank {
      - parameter api: The Gini backend API to use. Supply .custom("domain") in order to specify a custom domain.
      - parameter userApi: The Gini user backend API to use. Supply .custom("domain") in order to specify a custom domain.
      - parameter trackingDelegate: A delegate object to receive user events
+
+     - note: Screen API only.
 
      - returns: A presentable view controller.
      */
@@ -45,9 +47,9 @@ extension GiniBank {
                                                                           trackingDelegate: trackingDelegate)
         return screenCoordinator.start(withDocuments: importedDocuments)
     }
-
+    
     // MARK: - Screen API with Custom Networking - Initializers for 'UIViewController'
-
+    
     /**
      Returns a view controller which will handle the analysis process.
      It's the easiest way to get started with the Gini Bank SDK as it comes pre-configured and handles
