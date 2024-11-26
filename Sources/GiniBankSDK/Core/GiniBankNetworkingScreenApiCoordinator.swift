@@ -20,23 +20,32 @@ open class GiniBankNetworkingScreenApiCoordinator: GiniScreenAPICoordinator, Gin
     // MARK: - GiniCaptureDelegate
 
     public func didCapture(document: GiniCaptureDocument, networkDelegate: GiniCaptureNetworkDelegate) {
-        // The EPS QR codes are a special case, since they don0t have to be analyzed by the Gini Bank API and therefore,
-        // they are ready to be delivered after capturing them.
-        if let qrCodeDocument = document as? GiniQRCodeDocument,
-           let format = qrCodeDocument.qrCodeFormat,
-           case .eps4mobile = format {
-            let extractions = qrCodeDocument.extractedParameters.compactMap {
+        // Common logic for creating extractions
+        func createExtractions(for key: String, from document: GiniQRCodeDocument) -> [Extraction] {
+            return document.extractedParameters.compactMap {
                 Extraction(box: nil, candidates: nil,
-                           entity: QRCodesExtractor.epsCodeUrlKey,
+                           entity: key,
                            value: $0.value,
-                           name: QRCodesExtractor.epsCodeUrlKey)
+                           name: key)
             }
+        }
+
+        // Common logic for delivering the result
+        func deliverExtractionResult(for key: String, document: GiniQRCodeDocument) {
+            let extractions = createExtractions(for: key, from: document)
             let extractionResult = ExtractionResult(extractions: extractions,
                                                     lineItems: [],
                                                     returnReasons: [],
                                                     candidates: [:])
-
             deliver(result: extractionResult, analysisDelegate: networkDelegate)
+        }
+
+        // The EPS QR codes are a special case, since they don't have to be analyzed by the Gini Bank API and therefore,
+        // they are ready to be delivered after capturing them.
+        if let qrCodeDocument = document as? GiniQRCodeDocument,
+           let format = qrCodeDocument.qrCodeFormat,
+           format == .eps4mobile {
+            deliverExtractionResult(for: QRCodesExtractor.epsCodeUrlKey, document: qrCodeDocument)
             return
         }
 
@@ -142,6 +151,24 @@ open class GiniBankNetworkingScreenApiCoordinator: GiniScreenAPICoordinator, Gin
         self.trackingDelegate = trackingDelegate
     }
 
+    private init(resultsDelegate: GiniCaptureResultsDelegate,
+                configuration: GiniBankConfiguration,
+                documentMetadata: Document.Metadata?,
+                trackingDelegate: GiniCaptureTrackingDelegate?,
+                lib: GiniBankAPI) {
+        documentService = DocumentService(lib: lib, metadata: documentMetadata)
+        configurationService = lib.configurationService()
+        let captureConfiguration = configuration.captureConfiguration()
+        super.init(withDelegate: nil, giniConfiguration: captureConfiguration)
+
+        visionDelegate = self
+        GiniBank.setConfiguration(configuration)
+        giniBankConfiguration = configuration
+        giniBankConfiguration.documentService = documentService
+        self.resultsDelegate = resultsDelegate
+        self.trackingDelegate = trackingDelegate
+    }
+
     public init(resultsDelegate: GiniCaptureResultsDelegate,
                 configuration: GiniBankConfiguration,
                 documentMetadata: Document.Metadata?,
@@ -180,6 +207,22 @@ open class GiniBankNetworkingScreenApiCoordinator: GiniScreenAPICoordinator, Gin
                   configuration: configuration,
                   documentMetadata: documentMetadata,
                   api: api,
+                  trackingDelegate: trackingDelegate,
+                  lib: lib)
+    }
+
+    convenience init(alternativeTokenSource tokenSource: AlternativeTokenSource,
+                     resultsDelegate: GiniCaptureResultsDelegate,
+                     configuration: GiniBankConfiguration,
+                     documentMetadata: Document.Metadata?,
+                     trackingDelegate: GiniCaptureTrackingDelegate?) {
+        let lib = GiniBankAPI
+            .Builder(alternativeTokenSource: tokenSource)
+            .build()
+
+        self.init(resultsDelegate: resultsDelegate,
+                  configuration: configuration,
+                  documentMetadata: documentMetadata,
                   trackingDelegate: trackingDelegate,
                   lib: lib)
     }
@@ -567,10 +610,11 @@ extension GiniBankNetworkingScreenApiCoordinator: SkontoCoordinatorDelegate {
                 self?.transactionDocsDataCoordinator?.transactionDocs = [.init(documentId: documentId,
                                                                                fileName: "Document",
                                                                                type: .document)]
+                self?.setTransactionDocsDataToDisplay(with: extractionResult, for: documentId)
             } else {
                 self?.transactionDocsDataCoordinator?.transactionDocs = []
             }
-            self?.setTransactionDocsDataToDisplay(with: extractionResult)
+            
             deliveryFunction(extractionResult)
         })
     }
@@ -719,18 +763,31 @@ extension GiniBankNetworkingScreenApiCoordinator: SkontoCoordinatorDelegate {
 }
 
 extension GiniBankNetworkingScreenApiCoordinator {
-    private func setTransactionDocsDataToDisplay(with extractionResult: ExtractionResult) {
+    private func setTransactionDocsDataToDisplay(with extractionResult: ExtractionResult, for documentId: String) {
         transactionDocsDataCoordinator?.loadDocumentData = { [weak self] in
-            self?.loadDocumentPages { [weak self] images, error in
-                guard let self = self else { return }
-                DispatchQueue.main.async {
-                    if let error = error {
-                        self.handlePreviewDocumentError(error: error)
-                        return
-                    }
+            guard let viewModel = self?.transactionDocsDataCoordinator?.getTransactionDocsViewModel(),
+                  let images = viewModel.cachedImages[documentId],
+                  !images.isEmpty else {
+                self?.loadDocumentPagesAndHandleErrors(for: documentId, with: extractionResult)
+                return
+            }
+            self?.updateTransactionDocsViewModel(with: images,
+                                                 extractionResult: extractionResult,
+                                                 for: documentId)
+        }
+    }
 
-                    self.updateTransactionDocsViewModel(with: images, extractionResult: extractionResult)
+    private func loadDocumentPagesAndHandleErrors(for documentId: String, with extractionResult: ExtractionResult) {
+        loadDocumentPages { [weak self] images, error in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                if let error = error {
+                    self.handlePreviewDocumentError(error: error)
+                    return
                 }
+                self.updateTransactionDocsViewModel(with: images,
+                                                    extractionResult: extractionResult,
+                                                    for: documentId)
             }
         }
     }
@@ -744,12 +801,14 @@ extension GiniBankNetworkingScreenApiCoordinator {
         }
     }
 
-    private func updateTransactionDocsViewModel(with images: [UIImage], extractionResult: ExtractionResult) {
+    private func updateTransactionDocsViewModel(with images: [UIImage],
+                                                extractionResult: ExtractionResult,
+                                                for documentId: String) {
         let extractionInfo = TransactionDocsExtractions(extractions: extractionResult)
         let viewModel = TransactionDocsDocumentPagesViewModel(originalImages: images,
                                                               extractions: extractionInfo)
         transactionDocsDataCoordinator?
             .getTransactionDocsViewModel()?
-            .setTransactionDocsDocumentPagesViewModel(viewModel)
+            .setTransactionDocsDocumentPagesViewModel(viewModel, for: documentId)
     }
 }
