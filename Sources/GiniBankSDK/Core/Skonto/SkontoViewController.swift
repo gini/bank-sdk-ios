@@ -36,7 +36,7 @@ final class SkontoViewController: UIViewController {
     private lazy var withDiscountContainerView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .giniColorScheme().container.background.uiColor()
+        view.backgroundColor = .giniBankColorScheme().container.background.uiColor()
         view.layer.cornerRadius = Constants.groupCornerRadius
         return view
     }()
@@ -55,7 +55,7 @@ final class SkontoViewController: UIViewController {
     private lazy var withoutDiscountContainerView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .giniColorScheme().container.background.uiColor()
+        view.backgroundColor = .giniBankColorScheme().container.background.uiColor()
         view.layer.cornerRadius = Constants.groupCornerRadius
         return view
     }()
@@ -183,7 +183,7 @@ final class SkontoViewController: UIViewController {
     private func setupView() {
         title = Strings.screenTitle
         edgesForExtendedLayout = []
-        view.backgroundColor = .giniColorScheme().background.primary.uiColor()
+        view.backgroundColor = .giniBankColorScheme().background.primary.uiColor()
 
         setupTopBarButtonsIfNeeded()
 
@@ -347,10 +347,7 @@ final class SkontoViewController: UIViewController {
             defaultBar.contentBarView.removeFromSuperview()
 
             removeLandscapeBottomBarContentView()
-        }
-
         // Attach correct bottom element and apply correct constraint
-        if let defaultBar = bottomNavigationBar as? DefaultSkontoBottomNavigationBar {
             pinToBottom(defaultBar, to: view)
             updateScrollViewBottomToViewConstraint(to: defaultBar.topAnchor)
         } else if let customBar = bottomNavigationBar {
